@@ -24,7 +24,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<OrderDto> getAllOrders() {
-        return null;
+        log.info("Entering the getAllOrders of MovieServiceImpl class!");
+        List<Order> orderList = orderRepository.findAll();
+        return orderMapper.toDto(orderList);
     }
 
     @Override
