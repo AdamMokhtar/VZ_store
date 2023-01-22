@@ -1,5 +1,6 @@
 package com.store.storeAPI.controller;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.store.storeAPI.dto.OrderDto;
 import com.store.storeAPI.service.OrderService;
 import com.store.storeAPI.utils.Navigation;
@@ -25,7 +26,7 @@ public class OrderController {
     }
 
     @PostMapping
-    public ResponseEntity<OrderDto> createOrder(@RequestBody OrderDto orderDto) {
+    public ResponseEntity<OrderDto> createOrder(@RequestBody OrderDto orderDto) throws JsonProcessingException {
         log.info("in createOrder method");
         return new ResponseEntity<>(orderService.makeOrder(orderDto), HttpStatus.CREATED);
     }

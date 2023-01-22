@@ -1,6 +1,9 @@
 package com.store.storeAPI.serviceImpl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.store.storeAPI.client.UserInfo;
 import com.store.storeAPI.dto.OrderDto;
+import com.store.storeAPI.dto.UserDto;
 import com.store.storeAPI.entity.Order;
 import com.store.storeAPI.mapper.OrderMapper;
 import com.store.storeAPI.repository.OrderRepository;
@@ -21,6 +24,8 @@ public class OrderServiceImpl implements OrderService {
     private OrderMapper orderMapper;
     @Autowired
     private Validator validator;
+    @Autowired
+    private UserInfo userInfo;
 
     @Override
     public List<OrderDto> getAllOrders() {
@@ -30,10 +35,20 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderDto makeOrder(OrderDto orderDto) {
+    public OrderDto makeOrder(OrderDto orderDto) throws JsonProcessingException {
         log.info("Entering the makeOrder method");
-        Order order = orderMapper.toEntity(orderDto);
-        order = orderRepository.save(order);
-        return orderMapper.toDto(order);
+
+        if(checkForSimilarEmail(orderDto.getEmail())){
+            Order order = orderMapper.toEntity(orderDto);
+            order = orderRepository.save(order);
+            return orderMapper.toDto(order);
+        }
+        throw new IllegalArgumentException("Email is invalid");
+
+    }
+
+    public boolean checkForSimilarEmail(String email) throws JsonProcessingException {
+        UserDto usersDto = userInfo.getUserInfo();
+        return usersDto.getData().stream().anyMatch(u->u.getEmail().equalsIgnoreCase(email));
     }
 }
