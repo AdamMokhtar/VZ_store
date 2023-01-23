@@ -2,6 +2,7 @@ package com.store.storeAPI.entity;
 
 //import jakarta.persistence.*;
 import lombok.Data;
+import net.minidev.json.annotate.JsonIgnore;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -20,6 +21,11 @@ public class Order implements Serializable {
     private String first_name;
     @Column(name = "last_name")
     private String last_name;
-    @Column(name = "product_id")
-    private Long product_ID;
+//    @Column(name = "product_id")
+//    private Long product_id;
+    @ManyToOne
+    @JsonIgnore
+    @JoinColumn(name="product_id", nullable=false)
+    private Product product;
+
 }
