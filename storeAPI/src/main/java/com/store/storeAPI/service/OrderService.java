@@ -9,6 +9,6 @@ import java.util.List;
 
 public interface OrderService {
     public List<OrderDto> getAllOrders();
-    public OrderDto makeOrder(OrderCreateDto orderCreateDto) throws JsonProcessingException, InstanceAlreadyExistsException;
+    public Long makeOrder(OrderCreateDto orderCreateDto) throws JsonProcessingException, InstanceAlreadyExistsException;
     public OrderDto getOrder(Long id);
 }

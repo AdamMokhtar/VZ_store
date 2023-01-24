@@ -1,16 +1,23 @@
 package com.store.storeAPI.entity;
 
 //import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
-import net.minidev.json.annotate.JsonIgnore;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.io.Serializable;
 
 @Entity
 @Table(name = "order")
-@Data
+@Getter
+@Setter
+//@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Order implements Serializable {
+    @ToString.Exclude
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id", unique=true)
@@ -23,9 +30,13 @@ public class Order implements Serializable {
     private String last_name;
 //    @Column(name = "product_id")
 //    private Long product_id;
-    @ManyToOne
+//    @ManyToOne
+//    @JsonIgnore
+//    @JoinColumn(name="product_id", nullable=false)
+
     @JsonIgnore
-    @JoinColumn(name="product_id", nullable=false)
+    @ManyToOne
+    @JoinColumn(name = "product_id")
     private Product product;
 
 }

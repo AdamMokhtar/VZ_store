@@ -1,0 +1,169 @@
+openapi: 3.0.3
+info:
+  title: Swagger Store vodafoneziggo - OpenAPI 3.0
+  description: |-
+    This is a sample  Store Server based on the OpenAPI 3.0 specification. 
+  
+  
+
+  contact:
+    email: adammokhtar10@gmail.com
+  version: 1.0.11
+
+servers:
+  - url: http://localhost:8080/api/
+tags:
+  - name: order
+    description: Orders done
+
+  - name: Product
+    description: Access to Products
+
+paths:
+  /order:
+
+    post:
+      tags:
+        - order
+      summary: Add a new order
+      description: Add a new order to the DB
+      requestBody:
+        description: Create a new order in the DB
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+        required: true
+      responses:
+        '201':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: NOT_FOUND
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Validations were not passed
+        '404':
+          description: BAD_REQUEST
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: The email was not found in our API
+        '208':
+          description: ALREADY_REPORTED
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: This product is ordered before by this user
+        '409':
+          description: CONFLICT
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: the product id passed is incorrect
+
+
+  /order/orders:
+    get:
+      tags:
+        - order
+      summary: Get all orders
+      description: Get all orders from the DB
+
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '404':
+          description: BAD_REQUEST
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: There were no orders found
+
+components:
+  schemas:
+    OrderCreate:
+      type: object
+      properties:
+        email:
+          type: string
+          example: john@email.com
+        product_id:
+          type: integer
+          format: int64
+          example: 1
+
+
+    OrderResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+          format: int64
+          example: 1
+
+    Order:
+      type: object
+      properties:
+        order_id:
+          type: integer
+          format: int64
+          example: 1
+        email:
+          type: string
+          example: john@email.com
+        first_name:
+          type: string
+          example: John
+        last_name:
+          type: string
+          example: Steve
+        Product:
+          $ref: '#/components/schemas/Product'
+
+
+
+    Product:
+      type: object
+      properties:
+        productID:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: product1
+
+
+
+

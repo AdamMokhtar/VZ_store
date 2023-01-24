@@ -7,9 +7,11 @@ import com.store.storeAPI.entity.Order;
 import com.store.storeAPI.entity.Product;
 import com.store.storeAPI.exception.EmailNotFound;
 import com.store.storeAPI.exception.OrderNotFound;
+import com.store.storeAPI.exception.OrderedBefore;
 import com.store.storeAPI.mapper.OrderMapper;
 import com.store.storeAPI.mapper.ProductMapper;
 import com.store.storeAPI.repository.OrderRepository;
+import com.store.storeAPI.repository.ProductRepository;
 import com.store.storeAPI.service.OrderService;
 import com.store.storeAPI.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
@@ -18,12 +20,17 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.management.InstanceAlreadyExistsException;
+import javax.validation.ConstraintViolation;
+import javax.validation.ConstraintViolationException;
 import javax.validation.Validator;
 
 @Service
 @Slf4j
 public class OrderServiceImpl implements OrderService {
+    @Autowired
+    private ProductRepository productRepository;
     @Autowired
     private OrderRepository orderRepository;
     @Autowired
@@ -47,37 +54,71 @@ public class OrderServiceImpl implements OrderService {
         log.info("Entering the getAllOrders of MovieServiceImpl class");
         List<Order> orderList = orderRepository.findAll();
         if(orderList.size() < 1){
-            throw new OrderNotFound("There were no movies found");
+            throw new OrderNotFound("There were no orders found");
         }
         return orderMapper.toDto(orderList);
     }
+
+    /**
+     * Getting order by the id
+     * @param id is the id of the order
+     * @return an order dto
+     * @throws IllegalArgumentException when id is null
+     */
     @Override
     public OrderDto getOrder(Long id) {
         log.info("Entering the getOrder method");
+        if(id == null)
+            throw new IllegalArgumentException("id cannot be null");
         Optional<Order> order = orderRepository.findById(id);
         return orderMapper.toDto(order.get());
     }
 
+    /**
+     * create an order object in the db
+     * the email passed in the order needs to be existing in an external Api
+     * the first name and last name will be filled from the external Api
+     * the same email can only order a specific product once
+     * @param orderCreateDto is the order info passed
+     * @return the order id
+     * @throws ConstraintViolationException when validations do not pass
+     */
     @Override
-    public OrderDto makeOrder(OrderCreateDto orderCreateDto) throws JsonProcessingException, InstanceAlreadyExistsException {
+    public Long makeOrder(OrderCreateDto orderCreateDto) throws InstanceAlreadyExistsException {
         log.info("Entering the makeOrder method");
-        //check if the same email and fill the rest
-        OrderDto orderDto = getOrderInformation(orderCreateDto);
-        Order order = orderMapper.toEntity(orderDto);
-        order = orderRepository.save(order);
-        return orderMapper.toDto(order);
+        Set<ConstraintViolation<OrderCreateDto>> violations = validator.validate(orderCreateDto);
+        if(violations.isEmpty()){
+            //check if the same email is found and fill the rest
+            OrderDto orderDto = InitializeOrderInformation(orderCreateDto);
+            Order order = orderMapper.toEntity(orderDto);
+            order = orderRepository.save(order);
+
+            //add order to the list in product send to db
+            Product product = order.getProduct();
+            product.addOrder(order);
+            productRepository.save(product);
+            return order.getOrderID();
+        }else {
+            throw new ConstraintViolationException("Validations were not passed",violations);
+        }
+
     }
 
-    public OrderDto getOrderInformation(OrderCreateDto orderCreateDto) throws InstanceAlreadyExistsException {
+    /**
+     * Initialize order by filling in data from external Api
+     * @param orderCreateDto is the order info passed
+     * @return an order dto
+     */
+    public OrderDto InitializeOrderInformation(OrderCreateDto orderCreateDto) {
 
         //get the user info from another API
         UserDto usersDto = getUserFromApiUsers();
         //check if similar email is in the external API
         UserDataDto userDataDto = checkSimilarEmailFound(usersDto,orderCreateDto.getEmail());
         //get product
-        //ProductDto productDto = productService.getProduct(orderCreateDto.getProduct_id());
         //check if product is not ordered by the same email before
-        ProductDto productDto =  checkOrderIsOrderedBefore(orderCreateDto);
+        ProductDto productDto = null;
+        productDto = checkOrderIsOrderedBefore(orderCreateDto);
         OrderDto orderDto = new OrderDto();
         orderDto.setFirst_name(userDataDto.getFirst_name());
         orderDto.setLast_name(userDataDto.getLast_name());
@@ -86,22 +127,13 @@ public class OrderServiceImpl implements OrderService {
         orderDto.setProduct(product);
         return orderDto;
 
-
-//        if (productDto != null && !productDto.getOrders().stream().anyMatch(o -> o.getEmail().equalsIgnoreCase(orderCreateDto.getEmail()))) {
-//
-//            if (user.isPresent()) {
-//                OrderDto orderDto = new OrderDto();
-//                orderDto.setFirst_name(user.get().getFirst_name());
-//                orderDto.setLast_name(user.get().getLast_name());
-//                orderDto.setEmail(orderCreateDto.getEmail());
-//                orderDto.setProduct(product);
-//                return orderDto;
-//            }
-//            return null;
-//        }
-//        return null;
     }
 
+    /**
+     * Gets the user info from the external Api
+     * @return user dto
+     * @throws RuntimeException when JsonProcessingException is catched
+     */
     public UserDto getUserFromApiUsers()
     {
         UserDto usersDto = null;
@@ -113,6 +145,12 @@ public class OrderServiceImpl implements OrderService {
         return usersDto;
     }
 
+    /**
+     *check if the same email passed can be found in the external Api
+     * @param usersDto is the user passed
+     * @param email is the email to be used to compare
+     * @return user data dto
+     */
     public UserDataDto checkSimilarEmailFound(UserDto usersDto,String email)
     {
         Optional<UserDataDto> user = usersDto.getData().stream().
@@ -123,16 +161,22 @@ public class OrderServiceImpl implements OrderService {
         throw new EmailNotFound("The email was not found in our API");
     }
 
-    public ProductDto checkOrderIsOrderedBefore(OrderCreateDto orderCreateDto) throws InstanceAlreadyExistsException {
+    /**
+     * checks if the order has been ordered by the same user before
+     *
+     * @param orderCreateDto order passed
+     * @return product dto
+     * @throws OrderedBefore when the order is being ordered for the second time
+     */
+    public ProductDto checkOrderIsOrderedBefore(OrderCreateDto orderCreateDto)  {
         //get product
         ProductDto productDto = productService.getProduct(orderCreateDto.getProduct_id());
         //check if product is not ordered by the same email before
-
         if (productDto != null && !productDto.getOrders().stream().anyMatch(o -> o.getEmail().equalsIgnoreCase(orderCreateDto.getEmail())))
         {
             return productDto;
         }
-        throw new InstanceAlreadyExistsException("This product is ordered before by this user");
+        throw new OrderedBefore("This product is ordered before by this user");
     }
 
 
