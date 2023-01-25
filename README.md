@@ -24,7 +24,7 @@ cd to the docker directory
 $ cd VZ_store/storeAPI/src/main/docker
 ```
 Within the docker-compose file you can change the information e.g., changing the ports values.
-Run the following command to 
+Run the following command
 
 ```bash
 $ docker-compose up
