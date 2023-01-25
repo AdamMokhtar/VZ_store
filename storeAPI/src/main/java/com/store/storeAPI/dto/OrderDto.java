@@ -1,13 +1,9 @@
 package com.store.storeAPI.dto;
 
-//import jakarta.validation.constraints.NotBlank;
-//import jakarta.validation.constraints.NotNull;
 import com.store.storeAPI.entity.Product;
-import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -23,7 +19,5 @@ public class OrderDto {
     private String email;
     private String first_name;
     private String last_name;
-//    @NotNull(message = "Product cannot be null")
-//    @NotBlank(message = "Product cannot be blank")
     private Product product;
 }
