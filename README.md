@@ -4,7 +4,7 @@ VZ store is a basic SpringBoot API that gives the user the option to create and 
 The application uses Postgres DB and SpringBoot framework.
 
 The application also includes an openapi file swagger and a postman collection.
- The two files can be found under the following path.Cancel changes
+ The two files can be found under the following path.
 
 ```
 VZ_store/storeAPI/src/main/resources/static
